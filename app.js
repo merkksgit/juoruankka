@@ -435,7 +435,7 @@ function initializeEventListeners() {
   // Navigation
   document.querySelectorAll(".nav-btn").forEach((btn) => {
     btn.addEventListener("click", (e) => {
-      const view = e.target.dataset.view;
+      const view = e.currentTarget.dataset.view;
       switchView(view);
     });
   });
