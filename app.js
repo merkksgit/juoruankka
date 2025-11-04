@@ -479,6 +479,13 @@ function switchView(view) {
   });
 }
 
+function goToHome() {
+  // Switch to feed view
+  switchView("feed");
+  // Switch to "Kaikki" (all) topic
+  switchTopic("all");
+}
+
 function switchTopic(topicId) {
   state.currentTopic = topicId;
 
