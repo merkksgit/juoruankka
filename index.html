@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>juoruankka</title>
+    <link rel="icon" type="image/png" href="favicon.png" />
+    <link rel="stylesheet" href="styles/styles.css" />
+  </head>
+  <body>
+    <!-- Header -->
+    <header class="header">
+      <div class="container">
+        <h1 class="logo">
+          <img
+            src="images/juoruankka-logo.png"
+            alt="juoruankka logo"
+            class="logo-img"
+          />
+          juoruankka
+        </h1>
+        <nav class="nav">
+          <button class="nav-btn active" data-view="feed">Feed</button>
+          <button class="nav-btn" data-view="settings">Settings</button>
+        </nav>
+      </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="container">
+      <!-- Topic Sidebar -->
+      <aside id="topic-sidebar" class="topic-sidebar">
+        <h3 class="sidebar-title">Aiheet</h3>
+        <nav class="topic-nav" id="topic-nav">
+          <!-- Topics will be dynamically populated -->
+        </nav>
+      </aside>
+
+      <!-- Main Content Area -->
+      <div class="main-content">
+        <!-- Feed View -->
+        <div id="feed-view" class="view active">
+          <!-- Loading State -->
+          <div id="loading" class="loading hidden">
+            <div class="spinner"></div>
+            <p>Loading articles...</p>
+          </div>
+
+          <!-- Error State -->
+          <div id="error" class="error-message hidden"></div>
+
+          <!-- Articles Grid -->
+          <div id="articles-grid" class="articles-grid"></div>
+
+          <!-- Empty State -->
+          <div id="empty-state" class="empty-state hidden">
+            <p>
+              No articles found. Try adjusting your settings or refresh the
+              page.
+            </p>
+          </div>
+        </div>
+
+        <!-- Settings View -->
+        <div id="settings-view" class="view">
+          <div class="settings-section">
+            <h3>RSS Feed Sources</h3>
+            <p class="section-description">
+              Toggle default sources on/off or add your own custom RSS feeds
+            </p>
+
+            <div id="rss-feeds-list" class="feed-list"></div>
+
+            <div class="add-feed-form">
+              <input
+                type="text"
+                id="new-feed-url"
+                placeholder="RSS feed URL"
+                class="input-field"
+              />
+              <input
+                type="text"
+                id="new-feed-name"
+                placeholder="Feed name"
+                class="input-field"
+              />
+              <button id="add-feed-btn" class="btn btn-primary">
+                Add Feed
+              </button>
+            </div>
+          </div>
+
+          <div class="settings-section">
+            <h3>Refresh Settings</h3>
+            <div class="setting-row">
+              <label for="auto-refresh">Auto-refresh every:</label>
+              <select id="auto-refresh" class="select-field">
+                <option value="0">Disabled</option>
+                <option value="5">5 minutes</option>
+                <option value="15" selected>15 minutes</option>
+                <option value="30">30 minutes</option>
+                <option value="60">1 hour</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="settings-actions">
+            <button id="refresh-now-btn" class="btn btn-secondary">
+              Refresh Now
+            </button>
+            <button id="reset-settings-btn" class="btn btn-danger">
+              Reset to Defaults
+            </button>
+          </div>
+        </div>
+      </div>
+      <!-- Close main-content -->
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+      <div class="container">
+        <p>v0.0.1 &copy; 2025 juoruankka</p>
+      </div>
+    </footer>
+
+    <!-- Custom Modal -->
+    <div id="custom-modal" class="modal-overlay hidden">
+      <div class="modal-content">
+        <h3 id="modal-title" class="modal-title"></h3>
+        <p id="modal-message" class="modal-message"></p>
+        <div class="modal-actions">
+          <button id="modal-cancel" class="btn btn-secondary">Cancel</button>
+          <button id="modal-confirm" class="btn btn-primary">OK</button>
+        </div>
+      </div>
+    </div>
+
+    <script src="app.js"></script>
+  </body>
+</html>
