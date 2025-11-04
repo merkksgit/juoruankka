@@ -13,15 +13,15 @@ const state = {
 const DEFAULT_RSS_FEEDS = [
   // General News (Kotimaa)
   {
-    name: "Yle Uutiset",
-    url: "https://feeds.yle.fi/uutiset/v1/recent.rss?publisherIds=YLE_UUTISET",
+    name: "Yle Kotimaa",
+    url: "https://yle.fi/rss/t/18-34837/fi",
     category: "kotimaa",
     enabled: true,
     isDefault: true,
   },
   {
     name: "HS Kotimaa",
-    url: "https://www.hs.fi/rss/kotimaa.xml",
+    url: "https://www.hs.fi/rss/suomi.xml",
     category: "kotimaa",
     enabled: true,
     isDefault: true,
@@ -43,8 +43,15 @@ const DEFAULT_RSS_FEEDS = [
 
   // International News (Ulkomaat)
   {
+    name: "Yle Ulkomaat",
+    url: "https://yle.fi/rss/t/18-34953/fi",
+    category: "ulkomaat",
+    enabled: true,
+    isDefault: true,
+  },
+  {
     name: "HS Ulkomaat",
-    url: "https://www.hs.fi/rss/ulkomaat.xml",
+    url: "https://www.hs.fi/rss/maailma.xml",
     category: "ulkomaat",
     enabled: true,
     isDefault: true,
@@ -67,7 +74,7 @@ const DEFAULT_RSS_FEEDS = [
   // Sports (Urheilu)
   {
     name: "Yle Urheilu",
-    url: "https://feeds.yle.fi/uutiset/v1/recent.rss?publisherIds=YLE_URHEILU",
+    url: "https://yle.fi/rss/urheilu",
     category: "urheilu",
     enabled: true,
     isDefault: true,
@@ -97,7 +104,7 @@ const DEFAULT_RSS_FEEDS = [
   // Economy & Business (Talous)
   {
     name: "Yle Talous",
-    url: "https://feeds.yle.fi/uutiset/v1/recent.rss?publisherIds=YLE_TALOUS",
+    url: "https://yle.fi/rss/t/18-19274/fi",
     category: "talous",
     enabled: true,
     isDefault: true,
@@ -120,7 +127,7 @@ const DEFAULT_RSS_FEEDS = [
   // Technology & Science (Teknologia/Tiede)
   {
     name: "Yle Tiede",
-    url: "https://feeds.yle.fi/uutiset/v1/recent.rss?publisherIds=YLE_TIEDE",
+    url: "https://yle.fi/rss/t/18-819/fi",
     category: "tiede",
     enabled: true,
     isDefault: true,
@@ -135,8 +142,8 @@ const DEFAULT_RSS_FEEDS = [
 
   // Entertainment (Viihde)
   {
-    name: "Yle Kulttuuri",
-    url: "https://feeds.yle.fi/uutiset/v1/recent.rss?publisherIds=YLE_KULTTUURI",
+    name: "Yle Viihde",
+    url: "https://yle.fi/rss/t/18-36066/fi",
     category: "viihde",
     enabled: true,
     isDefault: true,
