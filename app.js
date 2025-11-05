@@ -589,10 +589,7 @@ async function fetchRSSFeed(feed) {
   }
 }
 
-// ========================================
 // Article Rendering
-// ========================================
-
 function renderArticles() {
   const grid = document.getElementById("articles-grid");
   const emptyState = document.getElementById("empty-state");
