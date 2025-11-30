@@ -455,7 +455,7 @@ async function removeFeed(index) {
 
 async function resetSettings() {
   const confirmed = await customConfirm(
-    "Haluatko varmasti palauttaa kaikki asetukset oletusarvoihin? Tätä ei voi perua.",
+    "Haluatko varmasti palauttaa oletusasetukset?",
     "Palauta asetukset",
   );
   if (confirmed) {
