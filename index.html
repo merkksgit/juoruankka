@@ -24,7 +24,8 @@
           juoruankka
         </h1>
         <nav class="nav">
-          <button class="nav-btn active" data-view="feed">News</button>
+          <span class="header-date" id="header-date"></span>
+          <button class="nav-btn active" data-view="feed">Uutiset</button>
           <button class="nav-btn" data-view="settings">
             <i class="fas fa-cog"></i>
           </button>
@@ -49,7 +50,7 @@
           <!-- Loading State -->
           <div id="loading" class="loading hidden">
             <div class="spinner"></div>
-            <p>Loading articles...</p>
+            <p>Ladataan artikkeleita...</p>
           </div>
 
           <!-- Error State -->
@@ -61,8 +62,8 @@
           <!-- Empty State -->
           <div id="empty-state" class="empty-state hidden">
             <p>
-              No articles found. Try adjusting your settings or refresh the
-              page.
+              Artikkeleita ei löytynyt. Kokeile muuttaa asetuksia tai päivitä
+              sivu.
             </p>
           </div>
         </div>
@@ -70,52 +71,21 @@
         <!-- Settings View -->
         <div id="settings-view" class="view">
           <div class="settings-section">
-            <h3>RSS Feed Sources</h3>
-            <p class="section-description">
-              Toggle default sources on/off or add your own custom RSS feeds
-            </p>
+            <h3>Uutislähteet</h3>
+            <p class="section-description">Valitse oletuslähteet päälle/pois</p>
 
             <div id="rss-feeds-list" class="feed-list"></div>
-
-            <div class="add-feed-form">
-              <input
-                type="text"
-                id="new-feed-url"
-                placeholder="RSS feed URL"
-                class="input-field"
-              />
-              <input
-                type="text"
-                id="new-feed-name"
-                placeholder="Feed name"
-                class="input-field"
-              />
-              <button id="add-feed-btn" class="btn btn-primary">
-                Add Feed
-              </button>
-            </div>
-          </div>
-
-          <div class="settings-section">
-            <h3>Refresh Settings</h3>
-            <div class="setting-row">
-              <label for="auto-refresh">Auto-refresh every:</label>
-              <select id="auto-refresh" class="select-field">
-                <option value="0">Disabled</option>
-                <option value="5">5 minutes</option>
-                <option value="15" selected>15 minutes</option>
-                <option value="30">30 minutes</option>
-                <option value="60">1 hour</option>
-              </select>
-            </div>
           </div>
 
           <div class="settings-actions">
+            <button id="save-settings-btn" class="btn btn-primary">
+              Tallenna asetukset
+            </button>
             <button id="refresh-now-btn" class="btn btn-secondary">
-              Refresh Now
+              Päivitä nyt
             </button>
             <button id="reset-settings-btn" class="btn btn-danger">
-              Reset to Defaults
+              Palauta oletukset
             </button>
           </div>
         </div>

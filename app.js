@@ -5,8 +5,8 @@ const state = {
   currentTopic: "all",
   settings: {
     rssFeeds: [],
-    autoRefresh: 15,
   },
+  hasUnsavedChanges: false,
 };
 
 // Default Configuration
@@ -176,6 +176,21 @@ const TOPICS = [
   { id: "tiede", name: "Tiede" },
 ];
 
+// Header Date Update
+function updateHeaderDate() {
+  const dateElement = document.getElementById("header-date");
+  if (dateElement) {
+    const now = new Date();
+    const options = {
+      weekday: "short",
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    };
+    dateElement.textContent = now.toLocaleDateString("fi-FI", options);
+  }
+}
+
 // Sidebar Rendering
 function renderTopicSidebar() {
   const topicNav = document.getElementById("topic-nav");
@@ -194,6 +209,7 @@ function renderTopicSidebar() {
 
 // Initialization
 document.addEventListener("DOMContentLoaded", () => {
+  updateHeaderDate();
   renderTopicSidebar();
   loadSettings();
   initializeEventListeners();
@@ -220,11 +236,16 @@ function loadSettings() {
         );
         feed.isDefault = isDefault;
       }
-      if (feed.category === undefined) {
+      if (
+        feed.category === undefined ||
+        feed.category === null ||
+        feed.category === "omat"
+      ) {
         // Try to find matching default feed to get its category
         const defaultFeed = DEFAULT_RSS_FEEDS.find(
           (defaultFeed) => defaultFeed.url === feed.url,
         );
+        // Default feeds get their original category, custom feeds get null (will show in "all")
         feed.category = defaultFeed ? defaultFeed.category : null;
       }
       return feed;
@@ -237,18 +258,17 @@ function loadSettings() {
     saveSettings();
   }
 
-  // Load auto-refresh setting
-  const autoRefresh = localStorage.getItem("auto-refresh");
-  if (autoRefresh) {
-    state.settings.autoRefresh = parseInt(autoRefresh);
-    document.getElementById("auto-refresh").value = autoRefresh;
-  }
-
   renderSettings();
 }
 
 function saveSettings() {
   localStorage.setItem("espresso-settings", JSON.stringify(state.settings));
+}
+
+async function saveSettingsAndRefresh() {
+  saveSettings();
+  state.hasUnsavedChanges = false;
+  await loadArticles();
 }
 
 function renderSettings() {
@@ -261,14 +281,14 @@ function renderSettings() {
     "Helsingin Sanomat": [],
     Iltalehti: [],
     "Ilta-Sanomat": [],
-    Custom: [],
+    Omat: [],
   };
 
   state.settings.rssFeeds.forEach((feed, index) => {
     const feedData = { feed, index };
 
     if (!feed.isDefault) {
-      groupedFeeds["Custom"].push(feedData);
+      groupedFeeds["Omat"].push(feedData);
       console.log("Custom feed found:", feed.name);
     } else if (feed.name.startsWith("Yle")) {
       groupedFeeds["Yle"].push(feedData);
@@ -281,25 +301,55 @@ function renderSettings() {
     }
   });
 
-  console.log("Custom feeds count:", groupedFeeds["Custom"].length);
+  console.log("Custom feeds count:", groupedFeeds["Omat"].length);
 
-  // Render each source group
+  // Create columns container
+  const columnsContainer = document.createElement("div");
+  columnsContainer.className = "source-columns";
+
+  // Render each source as a column
   Object.entries(groupedFeeds).forEach(([source, feeds]) => {
     if (feeds.length === 0) return;
 
-    // Source header
-    const sourceHeader = document.createElement("div");
-    sourceHeader.className = "source-header";
-    sourceHeader.textContent = source;
-    rssFeedsList.appendChild(sourceHeader);
+    // Create column
+    const column = document.createElement("div");
+    column.className = "source-column";
 
-    // Source feeds container
-    const sourceContainer = document.createElement("div");
-    sourceContainer.className = "source-feeds";
+    // Column header with select all checkbox
+    const columnHeader = document.createElement("div");
+    columnHeader.className = "source-column-header";
+
+    // Check if all feeds in this source are enabled
+    const allEnabled = feeds.every(({ feed }) => feed.enabled);
+    const noneEnabled = feeds.every(({ feed }) => !feed.enabled);
+    const someEnabled = !allEnabled && !noneEnabled;
+
+    columnHeader.innerHTML = `
+      <label class="source-header-label">
+        <input
+          type="checkbox"
+          class="source-select-all"
+          ${allEnabled ? "checked" : ""}
+          onchange="toggleAllInSource('${source}')"
+        >
+        <span>${source}</span>
+      </label>
+    `;
+    column.appendChild(columnHeader);
+
+    // Set indeterminate state if some but not all are enabled
+    if (someEnabled) {
+      const checkbox = columnHeader.querySelector(".source-select-all");
+      checkbox.indeterminate = true;
+    }
+
+    // Column feeds list
+    const feedsList = document.createElement("div");
+    feedsList.className = "source-column-feeds";
 
     feeds.forEach(({ feed, index }) => {
       const feedItem = document.createElement("div");
-      feedItem.className = "feed-item-compact";
+      feedItem.className = "feed-checkbox-item";
 
       if (feed.isDefault) {
         // Extract short name (remove source prefix)
@@ -312,121 +362,110 @@ function renderSettings() {
         if (source === "Ilta-Sanomat") shortName = feed.name.replace("IS ", "");
 
         feedItem.innerHTML = `
-                    <label class="feed-checkbox-label-compact">
+                    <label class="feed-checkbox-label">
                         <input
                             type="checkbox"
                             class="feed-checkbox"
                             ${feed.enabled ? "checked" : ""}
                             onchange="toggleFeed(${index})"
                         >
-                        <span class="feed-name-compact">${escapeHtml(shortName)}</span>
+                        <span class="feed-name">${escapeHtml(shortName)}</span>
                     </label>
                 `;
       } else {
-        // Custom feed - compact style with checkbox and remove button
+        // Custom feed with remove button
         feedItem.innerHTML = `
-                    <div class="custom-feed-item">
-                        <label class="feed-checkbox-label-compact">
+                    <div class="custom-feed-checkbox-item">
+                        <label class="feed-checkbox-label">
                             <input
                                 type="checkbox"
                                 class="feed-checkbox"
                                 ${feed.enabled ? "checked" : ""}
                                 onchange="toggleFeed(${index})"
                             >
-                            <span class="feed-name-compact">${escapeHtml(feed.name)}</span>
+                            <span class="feed-name">${escapeHtml(feed.name)}</span>
                         </label>
                         <button class="btn-remove-compact" onclick="removeFeed(${index})" title="Remove feed">×</button>
                     </div>
                 `;
       }
 
-      sourceContainer.appendChild(feedItem);
+      feedsList.appendChild(feedItem);
     });
 
-    rssFeedsList.appendChild(sourceContainer);
+    column.appendChild(feedsList);
+    columnsContainer.appendChild(column);
   });
-}
 
-async function addFeed() {
-  const urlInput = document.getElementById("new-feed-url");
-  const nameInput = document.getElementById("new-feed-name");
-
-  const url = urlInput.value.trim();
-  const name = nameInput.value.trim();
-
-  if (!url) {
-    await customAlert("Please enter a feed URL", "Missing URL");
-    return;
-  }
-
-  if (!name) {
-    await customAlert("Please enter a feed name", "Missing Name");
-    return;
-  }
-
-  state.settings.rssFeeds.push({
-    name,
-    url,
-    category: null,
-    enabled: true,
-    isDefault: false,
-  });
-  saveSettings();
-  renderSettings();
-
-  urlInput.value = "";
-  nameInput.value = "";
-
-  showNotification("RSS feed added successfully!");
+  rssFeedsList.appendChild(columnsContainer);
 }
 
 function toggleFeed(index) {
   state.settings.rssFeeds[index].enabled =
     !state.settings.rssFeeds[index].enabled;
-  saveSettings();
-  showNotification(
-    state.settings.rssFeeds[index].enabled ? "Feed enabled" : "Feed disabled",
-  );
+  state.hasUnsavedChanges = true;
+  renderSettings();
+}
+
+function toggleAllInSource(source) {
+  // Find all feeds in this source
+  const feedsInSource = [];
+  state.settings.rssFeeds.forEach((feed, index) => {
+    let feedSource = null;
+    if (!feed.isDefault) {
+      feedSource = "Omat";
+    } else if (feed.name.startsWith("Yle")) {
+      feedSource = "Yle";
+    } else if (feed.name.startsWith("HS ")) {
+      feedSource = "Helsingin Sanomat";
+    } else if (feed.name.startsWith("Iltalehti")) {
+      feedSource = "Iltalehti";
+    } else if (feed.name.startsWith("IS ")) {
+      feedSource = "Ilta-Sanomat";
+    }
+
+    if (feedSource === source) {
+      feedsInSource.push({ feed, index });
+    }
+  });
+
+  // Check current state
+  const allEnabled = feedsInSource.every(({ feed }) => feed.enabled);
+
+  // Toggle all feeds in this source
+  feedsInSource.forEach(({ index }) => {
+    state.settings.rssFeeds[index].enabled = !allEnabled;
+  });
+
+  state.hasUnsavedChanges = true;
+  renderSettings();
 }
 
 async function removeFeed(index) {
   const confirmed = await customConfirm(
-    "Are you sure you want to remove this feed?",
-    "Remove Feed",
+    "Haluatko varmasti poistaa tämän lähteen?",
+    "Poista lähde",
   );
   if (confirmed) {
     state.settings.rssFeeds.splice(index, 1);
-    saveSettings();
+    state.hasUnsavedChanges = true;
     renderSettings();
-    showNotification("Feed removed");
   }
-}
-
-function updateAutoRefresh() {
-  const value = document.getElementById("auto-refresh").value;
-  localStorage.setItem("auto-refresh", value);
-  state.settings.autoRefresh = parseInt(value);
-  setupAutoRefresh();
-  showNotification("Auto-refresh updated");
 }
 
 async function resetSettings() {
   const confirmed = await customConfirm(
-    "Are you sure you want to reset all settings to defaults? This cannot be undone.",
-    "Reset Settings",
+    "Haluatko varmasti palauttaa kaikki asetukset oletusarvoihin? Tätä ei voi perua.",
+    "Palauta asetukset",
   );
   if (confirmed) {
-    localStorage.clear();
-    state.settings.rssFeeds = DEFAULT_RSS_FEEDS;
-    state.settings.autoRefresh = 15;
+    // Create a deep copy of default feeds to avoid reference issues
+    state.settings.rssFeeds = JSON.parse(JSON.stringify(DEFAULT_RSS_FEEDS));
 
     saveSettings();
+    state.hasUnsavedChanges = false;
     renderSettings();
-
-    document.getElementById("auto-refresh").value = "15";
-
-    showNotification("Settings reset to defaults");
-    loadArticles();
+    await loadArticles();
   }
 }
 
@@ -434,38 +473,57 @@ async function resetSettings() {
 function initializeEventListeners() {
   // Navigation
   document.querySelectorAll(".nav-btn").forEach((btn) => {
-    btn.addEventListener("click", (e) => {
+    btn.addEventListener("click", async (e) => {
       const view = e.currentTarget.dataset.view;
-      switchView(view);
+      await switchView(view);
     });
   });
 
   // Settings buttons
-  document.getElementById("add-feed-btn").addEventListener("click", addFeed);
-  document.getElementById("refresh-now-btn").addEventListener("click", () => {
-    loadArticles();
-    showNotification("Refreshing...");
-  });
+  document
+    .getElementById("save-settings-btn")
+    .addEventListener("click", async () => {
+      await saveSettingsAndRefresh();
+    });
+  document
+    .getElementById("refresh-now-btn")
+    .addEventListener("click", async () => {
+      const confirmed = await customConfirm(
+        "Haluatko päivittää kaikki artikkelit nyt?",
+        "Päivitä artikkelit",
+      );
+      if (confirmed) {
+        loadArticles();
+      }
+    });
   document
     .getElementById("reset-settings-btn")
     .addEventListener("click", resetSettings);
-
-  // Auto-refresh selector
-  document
-    .getElementById("auto-refresh")
-    .addEventListener("change", updateAutoRefresh);
-
-  // Allow Enter key to add feeds
-  document.getElementById("new-feed-url").addEventListener("keypress", (e) => {
-    if (e.key === "Enter") addFeed();
-  });
-  document.getElementById("new-feed-name").addEventListener("keypress", (e) => {
-    if (e.key === "Enter") addFeed();
-  });
 }
 
 // View Management
-function switchView(view) {
+async function switchView(view) {
+  // Check for unsaved changes when leaving settings
+  if (
+    state.currentView === "settings" &&
+    view !== "settings" &&
+    state.hasUnsavedChanges
+  ) {
+    const saveChanges = await customConfirm(
+      "Sinulla on tallentamattomia muutoksia. Haluatko tallentaa ne ennen poistumista?",
+      "Tallentamattomat muutokset",
+    );
+
+    if (saveChanges) {
+      // Save settings and refresh articles
+      await saveSettingsAndRefresh();
+    } else {
+      // Discard changes - reload settings from localStorage
+      loadSettings();
+      state.hasUnsavedChanges = false;
+    }
+  }
+
   state.currentView = view;
 
   // Update nav buttons
@@ -477,6 +535,12 @@ function switchView(view) {
   document.querySelectorAll(".view").forEach((v) => {
     v.classList.toggle("active", v.id === `${view}-view`);
   });
+
+  // Hide/show sidebar based on view
+  const sidebar = document.getElementById("topic-sidebar");
+  if (sidebar) {
+    sidebar.style.display = view === "feed" ? "block" : "none";
+  }
 }
 
 function goToHome() {
@@ -495,6 +559,9 @@ function switchTopic(topicId) {
   });
 
   renderArticles();
+
+  // Scroll to top when switching topics
+  window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
 // Article Fetching
@@ -523,7 +590,7 @@ async function loadArticles() {
   } catch (error) {
     console.error("Error loading articles:", error);
     showError(
-      "Failed to load articles. Please check your settings and try again.",
+      "Artikkeleiden lataus epäonnistui. Tarkista asetukset ja yritä uudelleen.",
     );
   } finally {
     showLoading(false);
@@ -558,7 +625,7 @@ async function fetchRSSFeed(feed) {
       const title = item.title;
       const description = stripHtml(item.description || item.content || "");
 
-      // Use the feed's category instead of keyword matching
+      // Use the feed's category
       const topics = feed.category ? [feed.category] : ["all"];
 
       // Get categories/tags from RSS feed
@@ -657,17 +724,16 @@ function setupAutoRefresh() {
     autoRefreshInterval = null;
   }
 
-  const minutes = state.settings.autoRefresh;
+  // Auto-refresh every 60 minutes
+  const minutes = 60;
 
-  if (minutes > 0) {
-    autoRefreshInterval = setInterval(
-      () => {
-        console.log("Auto-refreshing articles...");
-        loadArticles();
-      },
-      minutes * 60 * 1000,
-    );
-  }
+  autoRefreshInterval = setInterval(
+    () => {
+      console.log("Auto-refreshing articles...");
+      loadArticles();
+    },
+    minutes * 60 * 1000,
+  );
 }
 
 // UI Helpers
@@ -683,33 +749,6 @@ function showError(message) {
 
 function hideError() {
   document.getElementById("error").classList.add("hidden");
-}
-
-function showNotification(message) {
-  // Simple notification (you could enhance this with a toast notification)
-  console.log("Notification:", message);
-
-  // Create temporary notification
-  const notification = document.createElement("div");
-  notification.style.cssText = `
-        position: fixed;
-        top: 80px;
-        right: 20px;
-        background: var(--success-color);
-        color: white;
-        padding: 1rem 1.5rem;
-        border-radius: 8px;
-        box-shadow: var(--shadow);
-        z-index: 1000;
-        animation: slideIn 0.3s ease;
-    `;
-  notification.textContent = message;
-  document.body.appendChild(notification);
-
-  setTimeout(() => {
-    notification.style.animation = "slideOut 0.3s ease";
-    setTimeout(() => notification.remove(), 300);
-  }, 3000);
 }
 
 // Utility Functions
@@ -822,30 +861,3 @@ function customAlert(message, title = "Notice") {
     confirmBtn.addEventListener("click", handleConfirm);
   });
 }
-
-// Add CSS animation styles dynamically
-const style = document.createElement("style");
-style.textContent = `
-    @keyframes slideIn {
-        from {
-            transform: translateX(400px);
-            opacity: 0;
-        }
-        to {
-            transform: translateX(0);
-            opacity: 1;
-        }
-    }
-
-    @keyframes slideOut {
-        from {
-            transform: translateX(0);
-            opacity: 1;
-        }
-        to {
-            transform: translateX(400px);
-            opacity: 0;
-        }
-    }
-`;
-document.head.appendChild(style);
